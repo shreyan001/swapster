@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* styles/globals.css */
+
+/* Webkit browsers */
+::-webkit-scrollbar {
+  width: 6px; /* Thinner scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Transparent background */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc; /* Light gray color */
+  border-radius: 40px; /* Roundish shape */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin; /* Thin scrollbar */
+  scrollbar-color: #ccc transparent; /* Light gray thumb, transparent track */
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
