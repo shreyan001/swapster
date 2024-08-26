@@ -1,15 +1,48 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Settings } from 'lucide-react'
+import ConfigModal from './ui/configModal'
+
 
 export default function SwapView() {
+  const [slippageAmount, setSlippageAmount] = useState('1.0')
+  const [deadlineMinutes, setDeadlineMinutes] = useState('10')
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setIsConfigModalOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return  (
     <Card className="bg-white border-2 border-black shadow-[0_10px_20px_rgba(0,0,0,0.1)] max-w-md mx-auto">
       <CardContent className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Swap</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Swap</h2>
+          <div className="relative" ref={modalRef}>
+            <button className="text-gray-600 hover:text-black"
+              onClick={() => setIsConfigModalOpen(!isConfigModalOpen)}
+              
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+
+            <ConfigModal isOpen={isConfigModalOpen} />
+          </div>
+          
+        </div>
         <div className="space-y-4">
           <div className="bg-gray-100 p-4 border-2 border-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between">

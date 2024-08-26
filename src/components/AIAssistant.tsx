@@ -43,7 +43,7 @@ export default function AIAssistant({ isExpanded, toggleExpanded }: AIAssistantP
         initial={{ width: "70px" }}
         animate={{ width: isExpanded ? "484px" : "70px" }}
         transition={{ duration: 0.3 }}
-        style={{ position: 'fixed', right: 0, top: '10%', height: '85%', zIndex: 50 }}
+        style={{ position: 'fixed', right: 0, top: '9%', height: '85%', zIndex:  10 }}
       >
         <Button 
               variant="ghost" 
