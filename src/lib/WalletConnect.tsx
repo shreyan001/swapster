@@ -27,7 +27,7 @@ createWeb3Modal({
     '--w3m-accent': '#39FF14',
    
         '--w3m-color-mix': '#F7CA18',
-        '--w3m-color-mix-strength': 13
+        '--w3m-color-mix-strength': 16
  
     
     
