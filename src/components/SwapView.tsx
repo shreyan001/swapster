@@ -3,44 +3,39 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import ConfigModal from './ui/configModal';
 import Image from 'next/image';
-
-export const swapTokens = [
-  {
-    image: '/usdc.png',
-    name: 'USDC',
-    symbol: 'USDC',
-    contractAddress: '0x6aF43d3a396F82AFe4A92Af3C3cd29fD8175A9b5'
-  },
-  {
-    image: '/vercel.svg',
-    name: 'WETH',
-    symbol: 'WETH',
-    contractAddress: '0x8C06764aAc796b73F565174E9aedCf3Bb069637e'
-  },
-  {
-    image: '/usdt.png',
-    name: 'Tether',
-    symbol: 'USDT',
-    contractAddress: '0x370d193b6dAdef06E522680aa0063E66e104Fe49'
-  },
-  {
-    image: '/wbtc.png',
-    name: 'Wrapped Bitcoin',
-    symbol: 'WBTC',
-    contractAddress: '0xE6131D4d41F77F642e5c95ebC7026f62D04Fa9B7'
-  },
-];
+import { formatUnits, parseUnits } from 'viem';
+import { useAccount, useBalance, usePublicClient } from 'wagmi';
+import { swapTokens } from '@/utils/tradingUtils';
 
 export default function SwapView() {
+  const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
+
   const [slippageAmount, setSlippageAmount] = useState('1.0');
   const [deadlineMinutes, setDeadlineMinutes] = useState('10');
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [token0, setToken0] = useState(null);
-  const [token1, setToken1] = useState(null);
+  const [token0, setToken0] = useState('');
+  const [token1, setToken1] = useState('');
+  const [token0Amount, setToken0Amount] = useState('');
+  const [token1Amount, setToken1Amount] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const formatBalance = (balance: bigint, decimals: number) => {
+    return Number(formatUnits(balance, decimals)).toFixed(2);
+  };
+
+  const { data: token0Balance } = useBalance({
+    address,
+    token: token0 === 'ETH' ? undefined : swapTokens.find(t => t.symbol === token0)?.contractAddress as `0x${string}`,
+  });
+
+  const { data: token1Balance } = useBalance({
+    address,
+    token: token1 ? swapTokens.find(t => t.symbol === token1)?.contractAddress as `0x${string}` : undefined,
+  });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -55,12 +50,34 @@ export default function SwapView() {
     };
   }, []);
 
-  const handleToken0Select = (value:any) => {
+  const handleToken0Select = (value: string) => {
+    console.log('Token 0 selected:', value);
     setToken0(value);
   };
 
-  const handleToken1Select = (value:any) => {
+  const handleToken1Select = (value: string) => {
+    console.log('Token 1 selected:', value);
     setToken1(value);
+  };
+
+  const handleMaxToken0 = () => {
+    if (token0Balance) {
+      setToken0Amount(formatUnits(token0Balance.value, token0Balance.decimals));
+    }
+  };
+
+  const handleMaxToken1 = () => {
+    if (token1Balance) {
+      setToken1Amount(formatUnits(token1Balance.value, token1Balance.decimals));
+    }
+  };
+
+  const handleSlippageChange = (value: string) => {
+    setSlippageAmount(value);
+  };
+
+  const handleDeadlineChange = (value: string) => {
+    setDeadlineMinutes(value);
   };
 
   return (
@@ -75,26 +92,37 @@ export default function SwapView() {
               <Settings className="h-5 w-5" />
             </button>
 
-            <ConfigModal isOpen={isConfigModalOpen} />
+            <ConfigModal 
+              isOpen={isConfigModalOpen}
+              slippageAmount={slippageAmount}
+              deadlineMinutes={deadlineMinutes}
+              onSlippageChange={handleSlippageChange}
+              onDeadlineChange={handleDeadlineChange}
+            />
           </div>
         </div>
         <div className="space-y-4">
           <div className="bg-gray-100 p-4 border-2 border-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between">
               <span className="text-gray-600">Sell</span>
-              <span>0</span>
+              <span>{isConnected && token0Balance ? formatBalance(token0Balance.value, token0Balance.decimals) : '0.00'} {token0 === 'WETH' ? 'ETH' : token0}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
               <div className="relative w-1/2">
                 <Input
-                  className="bg-white border-2 border-black text-2xl w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
+                  className="bg-white border-2 border-black text-lg w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
                   placeholder="0"
+                  value={token0Amount}
+                  onChange={(e) => setToken0Amount(e.target.value)}
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span className="text-gray-400">MAX</span>
-                </div>
+                <button
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                  onClick={handleMaxToken0}
+                >
+                  MAX
+                </button>
               </div>
-              <Select onValueChange={handleToken0Select}>
+              <Select onValueChange={handleToken0Select} disabled={!isConnected}>
                 <SelectTrigger className="w-[120px] bg-white border-2 border-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] active:shadow-none transition-all duration-200 transform active:translate-y-1">
                   <SelectValue placeholder="Select token" />
                 </SelectTrigger>
@@ -114,16 +142,24 @@ export default function SwapView() {
           <div className="bg-gray-100 p-4 border-2 border-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between">
               <span className="text-gray-600">Buy</span>
-              <span>0</span>
+              <span>{isConnected && token1 && token1Balance ? formatBalance(token1Balance.value, token1Balance.decimals) : '0.00'} {token1}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
               <div className="relative w-1/2">
                 <Input
-                  className="bg-white border-2 border-black text-2xl w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
+                  className="bg-white border-2 border-black text-lg w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
                   placeholder="0"
+                  value={token1Amount}
+                  onChange={(e) => setToken1Amount(e.target.value)}
                 />
+                <button
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                  onClick={handleMaxToken1}
+                >
+                  MAX
+                </button>
               </div>
-              <Select onValueChange={handleToken1Select}>
+              <Select onValueChange={handleToken1Select} disabled={!isConnected}>
                 <SelectTrigger className="w-[120px] bg-white border-2 border-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] active:shadow-none transition-all duration-200 transform active:translate-y-1">
                   <SelectValue placeholder="Select token" />
                 </SelectTrigger>
@@ -141,8 +177,11 @@ export default function SwapView() {
             </div>
           </div>
         </div>
-        <Button className="w-full mt-4 bg-[#39FF14] text-black border-2 border-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] active:shadow-none transition-all duration-200 transform active:translate-y-1">
-          Swap
+        <Button 
+          className="w-full mt-4 bg-[#39FF14] text-black border-2 border-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] active:shadow-none transition-all duration-200 transform active:translate-y-1"
+          disabled={!isConnected}
+        >
+          {isConnected ? 'Swap' : 'Connect Wallet'}
         </Button>
       </CardContent>
     </Card>

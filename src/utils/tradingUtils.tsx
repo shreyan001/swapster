@@ -48,13 +48,13 @@ export const cryptoTokens = [
 
 export const swapTokens = [
   {
-    image: '/vercel.svg', 
+    image: '/usdc.png',
     name: 'USDC',
     symbol: 'USDC',
     contractAddress: '0x6aF43d3a396F82AFe4A92Af3C3cd29fD8175A9b5'
   },
   {
-    image: '/usdc.png',
+    image: '/vercel.svg',
     name: 'WETH',
     symbol: 'WETH',
     contractAddress: '0x8C06764aAc796b73F565174E9aedCf3Bb069637e'
@@ -71,9 +71,7 @@ export const swapTokens = [
     symbol: 'WBTC',
     contractAddress: '0xE6131D4d41F77F642e5c95ebC7026f62D04Fa9B7'
   },
-  
-]
-
+];
 
 
 
