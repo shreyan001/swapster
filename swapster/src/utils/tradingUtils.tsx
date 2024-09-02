@@ -79,12 +79,17 @@ export const swapTokens = [
   },
 ];
 
+export const liquidityPools = [
+  {
+    token0: 'USDT',
+    token1: 'USDC',
+    fee: 500, // 0.05%
+    poolAddress: '0xc5B0e65E6f1db52342bAC29922ADEeC38BFe1873'
+  }
+];
 
-
-
-
-  export const scheduledOperations = [
-    { id: 1, type: 'DCA', description: 'Buy 0.1 ETH every week', nextExecution: '2023-06-15 10:00 UTC' },
-    { id: 2, type: 'Take Profit', description: 'Sell 50% of LINK when price reaches $30', condition: 'LINK >= $30' },
-    { id: 3, type: 'Rebalance', description: 'Rebalance portfolio to 60% ETH, 30% BTC, 10% USDT', nextExecution: '2023-06-20 00:00 UTC' },
-  ]
+export const scheduledOperations = [
+  { id: 1, type: 'DCA', description: 'Buy 0.1 ETH every week', nextExecution: '2023-06-15 10:00 UTC' },
+  { id: 2, type: 'Take Profit', description: 'Sell 50% of LINK when price reaches $30', condition: 'LINK >= $30' },
+  { id: 3, type: 'Rebalance', description: 'Rebalance portfolio to 60% ETH, 30% BTC, 10% USDT', nextExecution: '2023-06-20 00:00 UTC' },
+]

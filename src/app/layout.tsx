@@ -7,7 +7,7 @@ import { config } from '@/lib/siwe';
 import Web3ModalProvider from "@/lib/WalletConnect";
 
 export const metadata: Metadata = {
-  title: "SwapConnect",
+  title: "Swapster",
   description: "Swap assets effortlessly with just a message."
 };
 

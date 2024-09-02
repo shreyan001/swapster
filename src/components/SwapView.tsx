@@ -17,7 +17,7 @@ export default function SwapView() {
   const [slippageAmount, setSlippageAmount] = useState('1.0');
   const [deadlineMinutes, setDeadlineMinutes] = useState('10');
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [token0, setToken0] = useState('');
+  const [token0, setToken0] = useState('ETH');
   const [token1, setToken1] = useState('');
   const [token0Amount, setToken0Amount] = useState('');
   const [token1Amount, setToken1Amount] = useState('');
@@ -105,13 +105,16 @@ export default function SwapView() {
           <div className="bg-gray-100 p-4 border-2 border-black shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between">
               <span className="text-gray-600">Sell</span>
-              <span>{isConnected && token0Balance ? formatBalance(token0Balance.value, token0Balance.decimals) : '0.00'} {token0 === 'WETH' ? 'ETH' : token0}</span>
+              <span>{isConnected && token0Balance ? `${formatBalance(token0Balance.value, token0Balance.decimals)} ${token0}` : '0.00 ETH'}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
               <div className="relative w-1/2">
                 <Input
                   className="bg-white border-2 border-black text-lg w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
                   placeholder="0"
+                  type="number"
+                  step="any"
+                  min="0"
                   value={token0Amount}
                   onChange={(e) => setToken0Amount(e.target.value)}
                 />
@@ -122,7 +125,7 @@ export default function SwapView() {
                   MAX
                 </button>
               </div>
-              <Select onValueChange={handleToken0Select} disabled={!isConnected}>
+              <Select onValueChange={handleToken0Select} disabled={!isConnected} value={token0}>
                 <SelectTrigger className="w-[120px] bg-white border-2 border-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:shadow-[0_2px_0_rgba(0,0,0,1)] active:shadow-none transition-all duration-200 transform active:translate-y-1">
                   <SelectValue placeholder="Select token" />
                 </SelectTrigger>
@@ -149,6 +152,7 @@ export default function SwapView() {
                 <Input
                   className="bg-white border-2 border-black text-lg w-full pl-3 pr-10 py-2 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] focus:shadow-[inset_0_6px_8px_rgba(0,0,0,0.2)] transition-all duration-200"
                   placeholder="0"
+                  type='number'
                   value={token1Amount}
                   onChange={(e) => setToken1Amount(e.target.value)}
                 />
