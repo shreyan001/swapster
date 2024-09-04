@@ -10,7 +10,7 @@ import {
   
   import { cookieStorage, createStorage } from 'wagmi';
   import { baseSepolia} from 'wagmi/chains';
-  
+  import { createPublicClient,http } from 'viem';
   // Get projectId from https://cloud.walletconnect.com
   export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
   
@@ -23,6 +23,10 @@ import {
     icons: ['https://i.postimg.cc/zBX50qgG/sw-apconnect.png'],
   };
   
+  export const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http()
+  });
   // Create wagmiConfig
   const chains = [baseSepolia] as const;
   export const config = defaultWagmiConfig({
@@ -34,6 +38,8 @@ import {
       storage: cookieStorage,
     }),
   });
+  
+
   
   export const siweConfig = createSIWEConfig({
     getMessageParams: async () => ({

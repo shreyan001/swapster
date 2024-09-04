@@ -1,3 +1,5 @@
+const USDT_USDC_500 = process.env.NEXT_PUBLIC_USDT_USDC_500 as `0x${string}`;
+
 export const portfolioData = [
   { name: 'Jan', value: 10000 },
   { name: 'Feb', value: 15000 },
@@ -5,8 +7,7 @@ export const portfolioData = [
   { name: 'Apr', value: 25000 },
   { name: 'May', value: 18000 },
   { name: 'Jun', value: 22000 },
-]
-
+];
 
 export const cryptoTokens = [
   {
@@ -51,40 +52,53 @@ export const swapTokens = [
     image: '/vercel.svg',
     name: 'Ethereum',
     symbol: 'ETH',
-    contractAddress: ''
-  },
-  {
-    image: '/usdc.png',
-    name: 'USDC',
-    symbol: 'USDC',
-    contractAddress: '0x6aF43d3a396F82AFe4A92Af3C3cd29fD8175A9b5'
+    contractAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    decimals: 18
   },
   {
     image: '/vercel.svg',
-    name: 'WETH',
+    name: 'Wrapped Ether',
     symbol: 'WETH',
-    contractAddress: '0x8C06764aAc796b73F565174E9aedCf3Bb069637e'
+    contractAddress: process.env.NEXT_PUBLIC_WETH_ADDRESS as `0x${string}`,
+    decimals: 18
   },
   {
     image: '/usdt.png',
     name: 'Tether',
     symbol: 'USDT',
-    contractAddress: '0x370d193b6dAdef06E522680aa0063E66e104Fe49'
+    contractAddress: process.env.NEXT_PUBLIC_TETHER_ADDRESS as `0x${string}`,
+    decimals: 18
   },
   {
     image: '/wbtc.png',
     name: 'Wrapped Bitcoin',
     symbol: 'WBTC',
-    contractAddress: '0xE6131D4d41F77F642e5c95ebC7026f62D04Fa9B7'
+    contractAddress: process.env.NEXT_PUBLIC_WRAPPED_BITCOIN_ADDRESS as `0x${string}`,
+    decimals: 18
   },
 ];
 
+export const liquidityPools = [
+  {
+    address: USDT_USDC_500,
+    token0: 'USDT',
+    token1: 'USDC',
+    fee: 500
+  }
+];
 
+export const scheduledOperations = [
+  { id: 1, type: 'DCA', description: 'Buy 0.1 ETH every week', nextExecution: '2023-06-15 10:00 UTC' },
+  { id: 2, type: 'Take Profit', description: 'Sell 50% of LINK when price reaches $30', condition: 'LINK >= $30' },
+  { id: 3, type: 'Rebalance', description: 'Rebalance portfolio to 60% ETH, 30% BTC, 10% USDT', nextExecution: '2023-06-20 00:00 UTC' },
+]
 
+import { formatUnits } from 'viem';
 
+export const formatBalance = (balance: bigint, decimals: number) => {
+  return Number(formatUnits(balance, decimals)).toFixed(2);
+};
 
-  export const scheduledOperations = [
-    { id: 1, type: 'DCA', description: 'Buy 0.1 ETH every week', nextExecution: '2023-06-15 10:00 UTC' },
-    { id: 2, type: 'Take Profit', description: 'Sell 50% of LINK when price reaches $30', condition: 'LINK >= $30' },
-    { id: 3, type: 'Rebalance', description: 'Rebalance portfolio to 60% ETH, 30% BTC, 10% USDT', nextExecution: '2023-06-20 00:00 UTC' },
-  ]
+export const getDefaultToken = () => swapTokens.find(t => t.symbol === 'ETH') || swapTokens[0];
+
+console.log('swapTokens:', swapTokens);

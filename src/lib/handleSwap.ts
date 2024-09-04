@@ -1,19 +1,77 @@
-import { AlphaRouter } from '@uniswap/smart-order-router';
-import { Token, CurrencyAmount, TradeType, Percent } from '@uniswap/sdk-core';
-import { parseUnits, formatUnits, Address } from 'viem';
-import JSBI from 'jsbi';
+import { parseUnits, formatUnits, encodeFunctionData } from 'viem';
 import { swapTokens, liquidityPools } from '@/utils/tradingUtils';
-import { baseSepolia } from 'viem/chains';
-import { usePublicClient, useWalletClient, useAccount } from 'wagmi';
+import {  useWalletClient, useAccount } from 'wagmi';
+import { publicClient } from './siwe';
 import { erc20Abi } from 'viem';
-erc20
 
-const V3_SWAP_ROUTER_ADDRESS = process.env.SWAP_ROUTER_ADDRESS as Address;
+const SWAP_ROUTER_ADDRESS = process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS as `0x${string}`;
+
+const swapRouterABI = [
+  {
+    name: 'exactInputSingle',
+    type: 'function',
+    inputs: [{
+      type: 'tuple',
+      components: [
+        { name: 'tokenIn', type: 'address' },
+        { name: 'tokenOut', type: 'address' },
+        { name: 'fee', type: 'uint24' },
+        { name: 'recipient', type: 'address' },
+        { name: 'deadline', type: 'uint256' },
+        { name: 'amountIn', type: 'uint256' },
+        { name: 'amountOutMinimum', type: 'uint256' },
+        { name: 'sqrtPriceLimitX96', type: 'uint160' }
+      ]
+    }],
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable'
+  }
+] as const;
+
+const QUOTER_ADDRESS = process.env.NEXT_PUBLIC_QUOTER_ADDRESS as `0x${string}`;
+
+const quoterABI = [
+  {
+    inputs: [
+      { name: 'tokenIn', type: 'address' },
+      { name: 'tokenOut', type: 'address' },
+      { name: 'fee', type: 'uint24' },
+      { name: 'amountIn', type: 'uint256' },
+      { name: 'sqrtPriceLimitX96', type: 'uint160' }
+    ],
+    name: 'quoteExactInputSingle',
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+] as const;
 
 export const useSwap = () => {
-  const publicClient = usePublicClient();
+
   const { data: walletClient } = useWalletClient();
   const { address: walletAddress } = useAccount();
+
+  const approveToken = async (
+    tokenAddress: `0x${string}`,
+    amount: bigint
+  ): Promise<`0x${string}`> => {
+    if (!walletClient || !walletAddress) throw new Error('Wallet not connected');
+
+    const data = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [SWAP_ROUTER_ADDRESS, amount],
+    });
+
+    const hash = await walletClient.sendTransaction({
+      to: tokenAddress,
+      data,
+      account: walletAddress,
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    return receipt.transactionHash;
+  };
 
   const getPrice = async (
     inputAmount: string,
@@ -21,11 +79,11 @@ export const useSwap = () => {
     deadline: number,
     token0Symbol: string,
     token1Symbol: string
-  ): Promise<[{ to: Address; data: `0x${string}`; value: bigint }, string, string] | null> => {
-    // Check if a pool exists for the token pair
+  ): Promise<[{ to: `0x${string}`; data: `0x${string}`; value: string }, string, string] | null> => {
     const pool = liquidityPools.find(
-      p => (p.token0 === token0Symbol && p.token1 === token1Symbol) ||
-           (p.token0 === token1Symbol && p.token1 === token0Symbol)
+      (p: { token0: string; token1: string; fee: number }) => 
+        (p.token0 === token0Symbol && p.token1 === token1Symbol) ||
+        (p.token0 === token1Symbol && p.token1 === token0Symbol)
     );
 
     if (!pool) {
@@ -41,68 +99,69 @@ export const useSwap = () => {
       return null;
     }
 
-    const TokenIn = new Token(baseSepolia.id, token0.contractAddress, 18, token0.symbol, token0.name);
-    const TokenOut = new Token(baseSepolia.id, token1.contractAddress, 18, token1.symbol, token1.name);
-
-    const percentSlippage = new Percent(slippageAmount, 100);
-    const wei = parseUnits(inputAmount, 18);
-    const currencyAmount = CurrencyAmount.fromRawAmount(TokenIn, JSBI.BigInt(wei));
-
-    const router = new AlphaRouter({ chainId: baseSepolia.id, provider: publicClient as any });
-
-    const route = await router.route(
-      currencyAmount,
-      TokenOut,
-      TradeType.EXACT_INPUT,
-      {
-        recipient: walletAddress,
-        slippageTolerance: percentSlippage,
-        deadline: deadline,
-      }
-    );
-
-    if (!route) {
-      console.error('No route found');
+    if (!token0?.contractAddress || !token1?.contractAddress) {
+      console.error('Token contract addresses are undefined');
       return null;
     }
 
-    const transaction = {
-      data: route.methodParameters.calldata,
-      to: V3_SWAP_ROUTER_ADDRESS,
-      value: BigInt(route.methodParameters.value),
-      // Remove 'from', 'gasPrice', and 'gasLimit'
-    };
+    const amountIn = parseUnits(inputAmount, token0.decimals);
 
-    const quoteAmountOut = route.quote.toFixed(6);
-    const ratio = (parseFloat(inputAmount) / parseFloat(quoteAmountOut)).toFixed(3);
+    try {
+      const quoteResult = await publicClient.readContract({
+        address: QUOTER_ADDRESS,
+        abi: quoterABI,
+        functionName: 'quoteExactInputSingle',
+        args: [token0.contractAddress, token1.contractAddress, pool.fee, amountIn, BigInt(0)]
+      });
 
-    return [transaction, quoteAmountOut, ratio];
+      const amountOut = quoteResult;
+      const quoteAmountOut = formatUnits(amountOut, token1.decimals);
+      const ratio = (parseFloat(inputAmount) / parseFloat(quoteAmountOut)).toFixed(3);
+
+      const params = {
+        tokenIn: token0.contractAddress,
+        tokenOut: token1.contractAddress,
+        fee: pool.fee,
+        recipient: walletAddress as `0x${string}`,
+        deadline: BigInt(Math.floor(Date.now() / 1000) + deadline),
+        amountIn,
+        amountOutMinimum: BigInt(Math.floor(Number(amountOut) * (1 - slippageAmount / 100))),
+        sqrtPriceLimitX96: BigInt(0)
+      };
+
+      const data = encodeFunctionData({
+        abi: swapRouterABI,
+        functionName: 'exactInputSingle',
+        args: [params],
+      });
+
+      const transaction = {
+        to: SWAP_ROUTER_ADDRESS,
+        data,
+        value: '0'
+      };
+
+      return [transaction, quoteAmountOut, ratio];
+    } catch (error) {
+      console.error('Error getting quote:', error);
+      return null;
+    }
   };
 
   const runSwap = async (
-    transaction: { to: Address; data: `0x${string}`; value: bigint }
+    transaction: { to: `0x${string}`; data: `0x${string}`; value: string }
   ): Promise<`0x${string}`> => {
     if (!walletClient || !walletAddress) throw new Error('Wallet not connected');
 
-    const approvalAmount = parseUnits('10', 18);
-    const tokenContract = {
-      address: transaction.to as Address,
-      abi: erc20Abi,
-    };
-
-    const approvalTx = await walletClient.writeContract({
-      ...tokenContract,
-      functionName: 'approve',
-      args: [V3_SWAP_ROUTER_ADDRESS, approvalAmount],
+    const hash = await walletClient.sendTransaction({
+      ...transaction,
+      account: walletAddress,
+      value: BigInt(transaction.value),
     });
-
-    await publicClient.waitForTransactionReceipt({ hash: approvalTx });
-
-    const tx = await walletClient.sendTransaction(transaction);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash: tx });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
     return receipt.transactionHash;
   };
 
-  return { getPrice, runSwap };
+  return { getPrice, runSwap, approveToken };
 };
 
