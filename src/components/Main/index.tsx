@@ -1,12 +1,13 @@
 'use client'
 import React, { useState } from 'react'
-import { Button } from './ui/button'
+import { Button } from '../ui/button'
 import SwapView from './SwapView'
 import LiquidityView from './LiquidityVIew'
 import DashboardView from './DashBoardView'
 import AIAssistant from './AIAssistant'
 import { motion, AnimatePresence } from 'framer-motion'
-import ConnectButton from './ui/WalletButton'
+import ConnectButton from '../ui/WalletButton'
+import { XMTPProvider } from '@xmtp/react-sdk'
 
 export default function Main() {
   const [activeView, setActiveView] = useState<'swap' | 'liquidity' | 'dashboard'>('swap')
@@ -15,6 +16,7 @@ export default function Main() {
   const toggleAssistant = () => setIsAssistantExpanded(!isAssistantExpanded)
 
   return (
+    <XMTPProvider>
     <div className="flex flex-col min-h-screen bg-white text-black font-sans">
       {/* Navbar */}
       <nav className="fixed z-50 top-0 left-0 right-0 flex justify-between items-center p-4 bg-gray-100 border-b-2 border-black">
@@ -86,5 +88,5 @@ export default function Main() {
         <AIAssistant isExpanded={isAssistantExpanded} toggleExpanded={toggleAssistant} />
       </div>
     </div>
-  )
+ </XMTPProvider> )
 }

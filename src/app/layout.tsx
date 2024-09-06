@@ -6,6 +6,8 @@ import { cookieToInitialState } from 'wagmi';
 import { config } from '@/lib/siwe';
 import Web3ModalProvider from "@/lib/WalletConnect";
 
+
+
 export const metadata: Metadata = {
   title: "Swapster",
   description: "Swap assets effortlessly with just a message."
@@ -25,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <Web3ModalProvider initialState={initialState}>
+    
       <body className={inter.className}>{children}</body>
+     
       </Web3ModalProvider>
     </html>
   );

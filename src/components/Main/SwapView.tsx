@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, Fuel } from 'lucide-react';
-import ConfigModal from './ui/configModal';
+import ConfigModal from '../ui/configModal';
 import Image from 'next/image';
 import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useBalance,  } from 'wagmi';
@@ -13,7 +13,7 @@ import { swapTokens } from '@/utils/tradingUtils';
 import { useSwap } from '@/lib/handleSwap';
 import { erc20Abi } from 'viem';
 import { publicClient } from '@/lib/siwe';
-import TransactionModal from './ui/TransactionModal';
+import TransactionModal from '../ui/TransactionModal';
 
 type SwapDetails = {
   fromToken: { symbol: string; amount: string; logo: string };
@@ -315,7 +315,7 @@ export default function SwapView() {
           </span>
           <span className="flex items-center">
             <Fuel className="h-4 w-4 mr-1" />
-            {gasPrice ? `${gasPrice} Gwei ($${gasPriceUSD})` : 'Loading...'}
+            {gasPriceUSD ? (Number(gasPriceUSD) < 0.01 ? '<$0.01' : `$${gasPriceUSD}`) : 'Loading...'}
           </span>
         </div>
         <Button 
