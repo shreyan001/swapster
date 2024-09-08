@@ -5,7 +5,7 @@ export default function FloatingInbox({
   isPWA = false,
   wallet,
   onLogout,
-  isContained = false,
+  isContained = true,
   isConsent = false,
 }) {
   return (
